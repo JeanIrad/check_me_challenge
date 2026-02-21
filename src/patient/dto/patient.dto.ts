@@ -1,6 +1,6 @@
-import { IsString, IsInt, Min, IsNotEmpty } from 'class-validator';
+import { IsString, IsInt, Min, IsNotEmpty, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-
+import { Sex } from '@prisma/client';
 export class CreatePatientDto {
   @ApiProperty({ example: 'Jane Doe' })
   @IsString()
@@ -12,10 +12,10 @@ export class CreatePatientDto {
   @Min(0)
   age: number;
 
-  @ApiProperty({ example: 'Female' })
-  @IsString()
+  @ApiProperty({ example: 'FEMALE' })
+  @IsEnum(Sex)
   @IsNotEmpty()
-  sex: string;
+  sex: Sex;
 
   @ApiProperty({ example: 'jane.doe@example.com' })
   @IsString()

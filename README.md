@@ -1,98 +1,71 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# CheckMe Ltd: Patient Symptom Logger & Insights Dashboard
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Project Overview
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+This application was built for the CheckMe Ltd Software Development Intern Technical Challenge. It serves as a simplified healthcare platform where patients can log their symptoms, and clinicians can view generated trends and automated alerts.
 
-## Description
+The goal of this system is to transform raw symptom data into actionable clinical insights, highlighting worsening conditions or frequent severe symptoms to enable early intervention.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## Tech Stack
+
+### Backend
+
+- **Framework:** [NestJS](https://nestjs.com/) (TypeScript)
+- **ORM:** [Prisma](https://www.prisma.io/)
+- **Database:** PostgreSQL
+- **Validation:** `class-validator` & `class-transformer`
+- **Utility:** `date-fns` (for complex date manipulation)
+- **API Documentation:** Swagger UI (`@nestjs/swagger`)
+
+### Frontend _(Adapt this section based on what you used)_
+
+- **Framework:** React / Next.js
+- **Styling:** Tailwind CSS / Material UI
+- **State Management / Data Fetching:** Axios / React Query
+
+---
+
+## Database Choice Justification
+
+**Why PostgreSQL and Prisma?**
+Healthcare data is inherently relational. A `Patient` has a strict one-to-many relationship with their `Symptoms`.
+
+1. **PostgreSQL** was chosen because we need ACID compliance and strict data integrity. Using constraints (like Enums for predefined symptom types and Foreign Keys with Cascade Deletes) ensures no orphaned records. Furthermore, indexing `patientId` and `dateOfOccurrence` heavily optimizes the time-series queries required by the Insights engine.
+2. **Prisma ORM** was chosen to guarantee end-to-end type safety. By utilizing Prisma's auto-generated types, we prevent runtime errors when passing data between the database and the NestJS controllers.
+
+---
+
+## Design Decisions & Assumptions
+
+### 1. The Insights Engine (Business Logic)
+
+The `GET /patients/:id/insights` endpoint is the core of the application.
+
+- **Database Optimization:** Instead of making multiple queries for the 7-day, prior 7-day, and 30-day windows, the service makes **one single query** to fetch the last 30 days of symptoms. The data is then partitioned and aggregated in-memory using TypeScript and `date-fns`. This vastly reduces database load.
+- **Edge Cases Handled:** If a new patient registers but has zero symptoms logged, the engine gracefully returns a `stable` trend and `null` top symptom rather than throwing a divide-by-zero error or crashing.
+
+### 2. Strict Input Validation
+
+Clinicians cannot rely on dirty data. I implemented global validation pipes using `class-validator`. The system strictly rejects:
+
+- Symptom severities outside the `1-5` range.
+- Invalid symptom types not present in the Prisma Enum.
+- Malformed dates (enforcing strict ISO 8601 formatting).
+
+---
+
+## 🚀 Setup and Run Instructions
+
+### Prerequisites
+
+- Node.js (v16+)
+- PostgreSQL running locally or via Docker
+
+### 1. Clone the repository
 
 ```bash
-$ npm install
+git clone [https://github.com/jeanirad/check_me_challenge.git](https://github.com/jeanirad/check_me_challenge.git)
+cd check_me_challenge
 ```
-
-## Compile and run the project
-
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).

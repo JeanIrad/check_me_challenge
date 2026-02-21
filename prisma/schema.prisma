@@ -18,12 +18,17 @@ enum SymptomType {
   FATIGUE
   OTHER
 }
+enum Sex {
+  MALE
+  FEMALE
+  OTHER
+}
 
 model Patient {
   id          String    @id @default(uuid())
   name        String
   age         Int
-  sex         String
+  sex         Sex @default(OTHER)
   contactInfo String
   createdAt   DateTime  @default(now())
   
@@ -42,4 +47,6 @@ model Symptom {
   patient          Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   @@index([patientId, dateOfOccurrence]) 
+  @@index([patientId, severity])
+  @@index([patientId, type])
 }
