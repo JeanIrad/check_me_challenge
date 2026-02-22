@@ -1,0 +1,52 @@
+
+generator client {
+  provider = "prisma-client-js"
+
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SymptomType {
+  BREAST_PAIN
+  LUMP_DETECTED
+  SKIN_CHANGES
+  NIPPLE_DISCHARGE
+  SWELLING
+  FATIGUE
+  OTHER
+}
+enum Sex {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model Patient {
+  id          String    @id @default(uuid())
+  name        String
+  age         Int
+  sex         Sex @default(OTHER)
+  contactInfo String
+  createdAt   DateTime  @default(now())
+  
+  symptoms    Symptom[] 
+}
+
+model Symptom {
+  id               String      @id @default(uuid())
+  patientId        String
+  type             SymptomType
+  severity         Int   
+  dateOfOccurrence DateTime
+  notes            String?     
+  createdAt        DateTime    @default(now())
+  
+  patient          Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, dateOfOccurrence]) 
+  @@index([patientId, severity])
+  @@index([patientId, type])
+}
